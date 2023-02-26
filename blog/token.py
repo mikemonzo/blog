@@ -1,8 +1,7 @@
 from datetime import timedelta, datetime
-from jose import jwt, JWTError
-from fastapi import Depends
-from . import schemas
 
+from blog import schemas
+from jose import jwt, JWTError
 
 # to get a string like this run:
 # openssl rand -hex 32

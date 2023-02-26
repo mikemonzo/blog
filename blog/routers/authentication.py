@@ -1,9 +1,8 @@
+from blog import database, models, token
+from blog.hashing import Hash
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-
-from .. import schemas, database, models, token
-from ..hashing import Hash
 
 router = APIRouter(prefix='/login', tags=['authentication'])
 

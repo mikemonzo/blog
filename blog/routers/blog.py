@@ -1,11 +1,10 @@
 """ pass """
 from typing import List
 
+from blog import schemas, database, oauth2
+from blog.repository import blog
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-
-from .. import schemas, database, oauth2
-from ..repository import blog
 
 router = APIRouter(
     prefix='/blog',
