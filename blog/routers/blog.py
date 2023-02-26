@@ -1,91 +1,77 @@
 """ pass """
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from .. import schemas, models, database
+from .. import schemas, database, oauth2
+from ..repository import blog
 
-router = APIRouter()
+router = APIRouter(
+    prefix='/blog',
+    tags=['blogs']
+)
 
 get_db = database.get_db
+get_current_user = oauth2.get_current_user
 
 
+# CREAT
 @router.post(
-    '/blog',
+    '/',
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.ShowBlog,
-    tags=['blogs']
+    response_model=schemas.ShowBlog
 )
-def create_blog(blog: schemas.Blog, db: Session = Depends(get_db)):
+def create_blog(request: schemas.Blog, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     """ pass """
-    new_blog = models.Blog(title=blog.title, body=blog.body)
-    db.add(new_blog)
-    db.commit()
-    db.refresh(new_blog)
-    return new_blog
+    return blog.create_blog(request, db)
+
+
+# READ
+@router.get(
+    '/',
+    response_model=List[schemas.ShowBlog]
+)
+def get_all_blog(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    """ pass """
+    return blog.get_all_blogs(db)
 
 
 @router.get(
-    '/blog',
-    response_model=List[schemas.ShowBlog],
-    tags=['blogs']
-)
-def get_all_blog(db: Session = Depends(get_db)):
-    """ pass """
-    blogs = db.query(models.Blog).all()
-    return blogs
-
-
-@router.get(
-    '/blog/{blog_id}',
+    '/{blog_id}',
     status_code=status.HTTP_200_OK,
-    response_model=schemas.ShowBlog,
-    tags=['blogs']
+    response_model=schemas.ShowBlog
 )
-def get_one_blog(blog_id: int, db: Session = Depends(get_db)):
+def get_one_blog(blog_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     """ pass """
-    blog = db.query(models.Blog).filter(models.Blog.id == blog_id).first()
-    if not blog:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Blog with the id {blog_id} is not available'
-        )
-    return blog
+    blog_query = blog.get_one_blog(blog_id, db)
+    return blog_query
 
 
-@router.delete(
-    '/blog/{blog_id}',
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=['blogs']
-)
-def delete_one_blog(blog_id: int, db: Session = Depends(get_db)):
-    """ pass """
-    blog = db.query(models.Blog).filter(models.Blog.id == blog_id)
-    if not blog.first():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Blog with id {blog_id} not found"
-        )
-    blog.delete(synchronize_session=False)
-    db.commit()
-    return 'done'
-
-
+# UPDATED
 @router.put(
-    '/blog/{blog_id}',
+    '/{blog_id}',
     status_code=status.HTTP_202_ACCEPTED,
-    response_model=schemas.ShowBlog,
-    tags=['blogs']
+    response_model=schemas.ShowBlog
 )
-def update_one_blog(blog_id: int, blog: schemas.Blog, db: Session = Depends(get_db)):
+def update_one_blog(
+        blog_id: int,
+        request: schemas.Blog,
+        db: Session = Depends(get_db),
+        current_user: schemas.User = Depends(get_current_user)
+):
     """ pass """
-    blog_query = db.query(models.Blog).filter(models.Blog.id == blog_id)
-    if not blog_query.first():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Blog with id {blog_id} not found"
-        )
-    blog_query.update(blog.dict())
-    db.commit()
-    return blog
+    return blog.update_blog(blog_id, request, db)
+
+
+# DELETE
+@router.delete(
+    '/{blog_id}',
+    status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_one_blog(blog_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    """ pass """
+    return blog.delete_blog(blog_id, db)
+
+
+
